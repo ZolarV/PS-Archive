@@ -1,0 +1,155 @@
+// Constant defines 
+ var ID = '1C61M5ZLhA3J23tRSQ64z_T-qzyYdWnUu4z4BD0fTUcc';
+ var Root = SpreadsheetApp.openById(ID);
+ var DS = 'DataSheet';
+ var today = new Date();  //  date string in standard formatte used in this doc
+ var CurUserEmail = Session.getActiveUser().getEmail();
+ // These are hardcoded but should be dynamically built
+ // Dynamic list build as function DynamicEmployeeList,  Hardcode saved for posterity 
+ /*
+ var Michael = ["Boone","Hudson","Boone PT (open at 7am)","Hickory","Taylorsville","Hickory PT","Hickory OUC"];
+ var Brian   = ["Concord","Concord PT","S&E","Sports","Sports PT","Sports Med PT","Pineville","Pineville PT","Monroe","Spine","Monroe PT","Spine OUC"];  
+ var Corey   = ["Kernersville","King","WS-Spine","Kernersville PT","Winston PT","Winston OUC","Clemmons","Winston"];
+ var Derak   = ["Mooresville","Mooresville PT","Ballantyne","South Park","Ballantyne PT (open at 7am)","Ballantyne OUC","Huntersville","Huntersville PT"];
+ var Malcolm = ["Lincolnton","Eastover PT","Lincolnton PT","F&A","Gastonia","Gastonia PT","Gastonia OUC","Hand","Hand PT"];
+ var Matthew = ["Health Information Services (Privacy, medical records, disability)","medical records to","mri","worker's comp","general appointment"];
+ var Neisha  = ["Matthews","Matthews PT (open at 7am)","Matthews OUC","University","University OUC","Blakeney","Shelby","Peds","University PT (open at 7am)","Wellness PT"];
+ var Shavon  = ["Bennettsville","Laurinburg","Pembroke","Rock Hill","Rock Hill PT","H&K"];
+ var Employees = [{Name: "Michael", Location:Michael}, {Name: "Brian", Location:Brian},{Name: "Corey",Location: Corey},{Name: "Malcolm" ,Location: Malcolm},{Name:"Matthew" ,Location: Matthew},{Name: "Neisha" ,Location: Neisha},{Name: "Shavon" ,Location: Shavon}];
+ */
+
+// Stuff to do
+//  add  a field in DataList  such that you can put in a new name to fill in while using the proper engineers locations. []
+
+// auto sets checkbox true based on name of engineer accessing document
+/*function onOpen2 (){
+ var Validation = sheet.getRange("C76:C84");
+  for(var itt = 1; itt <= 9 ; itt++)
+   {
+     if (Validation.getCell(itt,1).getValue() ==  getNameFromEmail())
+     {
+       Validation.getCell(itt,1).setValue(true);
+     } 
+   }
+}
+*/
+function AutoUpdateActiveSheet() {
+ var CurrentTime = (new Date()).toLocaleTimeString();
+ var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+ var DataList = SpreadsheetApp.getActiveSheet().getRange("A2:F67");           
+ var Employees = DynamicEmployeeList();               
+ var Validation = sheet.getRange("C76:C84");
+  
+ var rownum = 76
+  // stupid bunch of loops... srsly...  for nested for nested for nested for nested for... good god. 
+  // fuckin loops...
+  // I swear to god, every time i see the word loop, it brings back god aweful memories of frootieloops.
+  // Hashtag: VietnamFlashBackDoge
+  // No one reads this shit anyways...
+  for(var itt = 1; itt <= 9 ; itt++)
+   {
+     var CurrentEmployee = sheet.getRange(rownum, 1, 1, 1).getValue();
+     var selected = Validation.getCell(itt,1).getValue();
+     if( selected == true) {
+       for(var loop =0 ; loop < Employees.length; loop++){
+         if(Employees[loop].Name == CurrentEmployee){
+           // this is probably a portal to hell for all we know
+           var currentname = Employees[loop].Name
+           for(var another =0; another <= Employees[loop].Location.length; another ++){
+             for(var testloc = 1; testloc <= 66; testloc ++){
+               // At this point the code is actually magic and comes directly from satan himself
+               if(DataList.getCell(testloc, 1).getValue() == Employees[loop].Location[another]){
+                 DataList.getCell(testloc, 3).setValue(currentname);
+                 DataList.getCell(testloc, 4).setValue(CurrentTime);
+                 DataList.getCell(testloc, 5).setValue("Open");
+                 DataList.getCell(testloc, 6).setValue("Menu then PSC");
+               }
+             } // we're gonna need doom guy to close all these portals.. er loops
+           }
+           Validation.getCell(itt,1).setValue(false);
+         }
+       }  // might need to bring in B.J. blazkowicz
+     }
+     rownum++;
+   }   // hell, get Commander Keen on the line!    
+}
+  
+// creates Dynamic Employee/Location Object on DataSheet Ranges A2:B67 
+function DynamicEmployeeList() {
+  var RootSource = Root.getSheetByName(DS);
+  var ImportingData = RootSource.getRange("A2:B67").getValues();
+  var UniqueEngineers = RootSource.getRange("E2:E10").getValues();
+  var DynamicList = [];
+  // creates list by name and assigns all locations to that name before moving on
+  for (item in UniqueEngineers){
+    // new name
+    var name = UniqueEngineers[item][0];   
+    // get all locations associated with name assign to array
+    var LocArray = [];
+    for(items in ImportingData ){
+       if(ImportingData[items][0] == name){
+         LocArray.push(ImportingData[items][1]);
+       }
+    }
+   // assigns name and locations as properties to object. 
+         DynamicList.push(  {Name: name , Location: LocArray});
+  }
+return DynamicList; 
+}
+
+// Stuff to do
+// Add phone compatability [x]
+// Trigger onEdit using Range in DataSheet
+// Populate new Dynamic list as object [x]  
+// populate current day sheet with updated Employee list + checkboxes
+
+function onOpen() {
+  var formatted = getDateF(today);
+  var myss = SpreadsheetApp.openById(ID);
+  // goTo current Date sheet
+  SpreadsheetApp.getActiveSpreadsheet().getSheetByName(formatted).activate();
+  SpreadsheetApp.getUi() // Or DocumentApp or FormApp.
+     .createMenu('Execute for Phone')
+     .addItem('Execute', 'UpdatePhoneList')
+     .addItem('Next 5 sheets', 'SpecialOpenDuplicateSheets')
+     .addToUi();
+  
+  var sheet = SpreadsheetApp.getActiveSpreadsheet().getActiveSheet();
+  var Validation = sheet.getRange("A76:C84");
+  var user = getNameFromEmail();
+  for(var itt = 1; itt <= 9 ; itt++)
+   {if(Validation.getCell(itt,1).getValue().toLowerCase() == user)
+     {Validation.getCell(itt,3).setValue(true);} 
+   }
+}
+// auto duplicates sheets for +5 days and renames them according to our naming convention
+// currently not sensitive to sat/sun  /need to dooooo.  or just tell user to open on sunday
+function SpecialOpenDuplicateSheets(){
+  var NextDays = [];
+  for(var itt=1; itt <6 ; itt++){
+    var date = new Date();
+    date.setDate(today.getDate()+itt);
+    NextDays.push(getDateF(date));
+  }
+  // creates new sheets based on namearray we created above, also gets index of template and moves them 1 by 1 behind template.  resulting in the "highest" day being next to template.  where it should be.  bitches.
+  for(items in NextDays){
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template").activate();
+    var index = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Template").getIndex();
+    SpreadsheetApp.getActiveSpreadsheet().duplicateActiveSheet();
+    SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Copy Of Template").activate();
+    SpreadsheetApp.getActiveSheet().setName(NextDays[items]);
+    SpreadsheetApp.getActiveSpreadsheet().moveActiveSheet((index))
+  }
+}
+
+// formate date via current naming convention
+function getDateF(d) {
+    if (d) {
+        return (d.getMonth() + 1) + "." + d.getDate() + "." + d.getFullYear();
+    }
+}
+// Get name from emial
+function getNameFromEmail(){
+ var UserName = CurUserEmail.substring(0, (CurUserEmail.indexOf("@healthspaces.com")));
+return UserName;
+}
