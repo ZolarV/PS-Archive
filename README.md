@@ -1,2 +1,3 @@
 # PS-Archive
-Archived PS scripts
+Archived Scripts from PowerShell and scripts.google.com
+
